@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0c0a0b">
-<meta name="version" content="bohemy-v04">
-<!-- Bohemy v04 — instalar PWA + animación blindada -->
+<meta name="version" content="bohemy-v05">
+<!-- Bohemy v05 — fix congelacion (caras precargadas) -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -135,7 +135,7 @@ body.light .card{ background:linear-gradient(180deg,var(--panel-2),var(--panel))
 .tray .tscore b{ color:var(--text); } .tray .tscore.bad{ font-style:italic; }
 
 .pd{ position:absolute; width:56px; height:56px; z-index:4; will-change:transform; touch-action:none; background:#e9e0cc; border-radius:12px; }
-.pd img{ width:100%; height:100%; display:block; pointer-events:none; -webkit-user-drag:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
+.pd img{ position:absolute; inset:0; width:100%; height:100%; pointer-events:none; -webkit-user-drag:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
 .pd.grab img{ filter:drop-shadow(0 10px 14px rgba(0,0,0,.55)); }
 .pd.kept::after{ content:''; position:absolute; inset:-3px; border-radius:13px; box-shadow:0 0 0 2px var(--accent); }
 .sh{ position:absolute; z-index:3; width:56px; height:18px; border-radius:50%; background:radial-gradient(ellipse at center, rgba(0,0,0,.55), transparent 70%); pointer-events:none; will-change:transform,opacity; }
@@ -300,11 +300,11 @@ function place(d,x,y,z,scale,rot){ d.x=x; d.y=y; d.rot=rot;
   d.el.style.transform=`translate(${x-HALF}px,${y-HALF}px) rotate(${rot}deg) scale(${scale})`;
   const ss=1+z/120, op=Math.max(.08,.42-z/360);
   d.sh.style.transform=`translate(${x-HALF}px,${y-HALF+HALF+5}px) scale(${ss},${ss*0.7})`; d.sh.style.opacity=op; }
-function setFace(d,v){ d.value=v; d.img.src=ASSETS.dado[v-1]; }
+function setFace(d,v){ d.value=v; for(let i=0;i<6;i++) d.imgs[i].style.display=(i===v-1?'block':'none'); }
 function makeDie(value){ const el=document.createElement('div'); el.className='pd';
-  const img=document.createElement('img'); img.src=ASSETS.dado[value-1]; el.appendChild(img);
+  const imgs=[]; for(let v=1;v<=6;v++){ const im=document.createElement('img'); im.src=ASSETS.dado[v-1]; im.style.display=v===value?'block':'none'; el.appendChild(im); imgs.push(im); }
   const sh=document.createElement('div'); sh.className='sh'; stage.appendChild(sh); stage.appendChild(el);
-  const d={el,sh,img,value,zone:'mesa',x:0,y:0,rot:0}; attachDrag(d); return d; }
+  const d={el,sh,imgs,value,zone:'mesa',x:0,y:0,rot:0}; attachDrag(d); return d; }
 function clearDice(){ G.dice.forEach(d=>{d.el.remove();d.sh.remove();}); G.dice=[]; }
 function scatterTargets(n){ const w=stage.clientWidth, top=46, bottom=trayTop()-18, left=38, right=w-38, pts=[]; let g=0;
   while(pts.length<n&&g++<400){ const x=left+Math.random()*(right-left), y=top+Math.random()*(bottom-top);
@@ -336,7 +336,7 @@ function animateDice(list, originFn, withCup, done){
       const t=Math.min(1,lt/D), e=easeOut(t);
       const x=d._o.x+(d._t.x-d._o.x)*e, y=d._o.y+(d._t.y-d._o.y)*e;
       const z=Math.max(0,(1-t)*(withCup?150:90)*Math.abs(Math.sin(Math.PI*t*2.4)));
-      if(t<0.82){ if((performance.now()|0)%3===0) d.img.src=ASSETS.dado[rollDie()-1]; }
+      if(t<0.82){ if(ts-(d._lastSh||0)>70){ d._lastSh=ts; setFace(d, rollDie()); } }
       else if(!d._fixed){ d._fixed=true; setFace(d,d.value); if(hasWAAPI){try{d.el.animate([{},{transform:d.el.style.transform+' scaleY(.84)'},{}],{duration:130,easing:'ease-out'});}catch(e){}} sfx('tap'); }
       place(d,x,y,z,1+z/300, t<0.82?(1-t)*430+d._endRot:d._endRot); });
     if(!allDone&&!skip) requestAnimationFrame(frame); else finalize(); }
