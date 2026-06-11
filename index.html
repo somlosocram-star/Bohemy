@@ -4,8 +4,8 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0c0a0b">
-<meta name="version" content="bohemy-v03">
-<!-- Bohemy v03 — dados de hueso + arrastre + cubilete -->
+<meta name="version" content="bohemy-v04">
+<!-- Bohemy v04 — instalar PWA + animación blindada -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
@@ -56,8 +56,7 @@ body.light #theme-toggle{ border-color:var(--accent); }
 #sound-toggle.muted{ color:var(--muted); } #sound-toggle .ic-on{display:inline;} #sound-toggle .ic-off{display:none;}
 #sound-toggle.muted .ic-on{display:none;} #sound-toggle.muted .ic-off{display:inline;}
 #help-btn{ position:fixed; top:max(1rem,env(safe-area-inset-top)); left:1.2rem; z-index:500; width:30px; height:30px; border-radius:50%; border:none; cursor:pointer; background:var(--accent); color:var(--on-accent); font-family:'Cormorant Garamond',serif; font-style:italic; font-weight:700; font-size:1.1rem; display:flex; align-items:center; justify-content:center; box-shadow:0 2px 8px rgba(0,0,0,.3); }
-body.in-game #theme-toggle, body.in-game #sound-toggle, body.in-game #help-btn{ opacity:.25; }
-body.in-game #theme-toggle:active, body.in-game #sound-toggle:active, body.in-game #help-btn:active{ opacity:.9; }
+body.in-game #theme-toggle, body.in-game #sound-toggle, body.in-game #help-btn{ display:none; }
 
 #tutorial-overlay{ position:fixed; inset:0; z-index:600; background:color-mix(in srgb,var(--bg) 97%,transparent); display:none; flex-direction:column; padding:2rem 1.4rem 1.4rem; overflow-y:auto; }
 #tutorial-overlay.visible{ display:flex; animation:screenIn .4s ease both; }
@@ -135,7 +134,7 @@ body.light .card{ background:linear-gradient(180deg,var(--panel-2),var(--panel))
 .tray .tscore{ position:absolute; top:6px; right:12px; font-family:'IBM Plex Mono',monospace; font-size:.62rem; color:var(--muted); }
 .tray .tscore b{ color:var(--text); } .tray .tscore.bad{ font-style:italic; }
 
-.pd{ position:absolute; width:56px; height:56px; z-index:4; will-change:transform; touch-action:none; }
+.pd{ position:absolute; width:56px; height:56px; z-index:4; will-change:transform; touch-action:none; background:#e9e0cc; border-radius:12px; }
 .pd img{ width:100%; height:100%; display:block; pointer-events:none; -webkit-user-drag:none; filter:drop-shadow(0 2px 3px rgba(0,0,0,.4)); }
 .pd.grab img{ filter:drop-shadow(0 10px 14px rgba(0,0,0,.55)); }
 .pd.kept::after{ content:''; position:absolute; inset:-3px; border-radius:13px; box-shadow:0 0 0 2px var(--accent); }
@@ -203,6 +202,7 @@ body.light .card{ background:linear-gradient(180deg,var(--panel-2),var(--panel))
     <button class="btn" id="btn-local">Partida local</button>
     <button class="btn" id="btn-ai" disabled>vs IA · pronto</button>
     <button class="btn" id="btn-online" disabled>Online · pronto</button>
+    <button class="btn-secondary btn" id="btn-install" style="display:none">⤓ instalar app</button>
   </div>
 </div>
 
@@ -315,23 +315,31 @@ function scatterTargets(n){ const w=stage.clientWidth, top=46, bottom=trayTop()-
 function animateDice(list, originFn, withCup, done){
   const targets=scatterTargets(list.length);
   list.forEach((d,i)=>{ d._endRot=(Math.random()*16-8); d._fixed=false; d._t=targets[i]; d._o=originFn(d,i); });
-  if(REDUCED){ list.forEach(d=>{ setFace(d,d.value); place(d,d._t.x,d._t.y,0,1,d._endRot); }); animating=false; done&&done(); return; }
+  list.forEach(d=>{ place(d,d._o.x,d._o.y,withCup?120:30,withCup?.7:.92,0); }); // visibles ya
   animating=true; skip=false;
-  if(withCup){ cup.style.opacity=1;
-    const f=cup.animate([{transform:'translate(-50%,-130%) rotate(-8deg)',opacity:0,offset:0},{transform:'translate(-50%,-8%) rotate(-6deg)',opacity:1,offset:.45},{transform:'translate(-38%,2%) rotate(58deg)',opacity:1,offset:.75},{transform:'translate(-30%,6%) rotate(108deg)',opacity:1,offset:1}],{duration:430,easing:'cubic-bezier(.3,.7,.3,1)',fill:'forwards'});
-    f.onfinish=()=>cup.animate([{transform:'translate(-30%,6%) rotate(108deg)',opacity:1},{transform:'translate(-30%,-120%) rotate(120deg)',opacity:0}],{duration:260,easing:'ease-in',fill:'forwards'}); }
-  const emitAt=withCup?300:60, D=560; let start=null;
-  function frame(ts){ if(!start)start=ts; const gt=ts-start; const allDone=gt>=emitAt+D;
+  let finished=false, safety=null;
+  function finalize(){ if(finished)return; finished=true; if(safety)clearTimeout(safety);
+    list.forEach(d=>{ d._fixed=true; setFace(d,d.value); place(d,d._t.x,d._t.y,0,1,d._endRot); });
+    animating=false; if(done)done(); }
+  const hasWAAPI = typeof Element!=='undefined' && Element.prototype && typeof Element.prototype.animate==='function';
+  const hasRAF = typeof requestAnimationFrame==='function';
+  if(REDUCED || !hasRAF){ safety=setTimeout(finalize,30); return; }
+  const emitAt=withCup?300:60, D=560;
+  safety=setTimeout(finalize, emitAt+D+700);   // red de seguridad anti-cuelgue
+  if(withCup && hasWAAPI){ cup.style.opacity=1;
+    try{ const f=cup.animate([{transform:'translate(-50%,-130%) rotate(-8deg)',opacity:0,offset:0},{transform:'translate(-50%,-8%) rotate(-6deg)',opacity:1,offset:.45},{transform:'translate(-38%,2%) rotate(58deg)',opacity:1,offset:.75},{transform:'translate(-30%,6%) rotate(108deg)',opacity:1,offset:1}],{duration:430,easing:'cubic-bezier(.3,.7,.3,1)',fill:'forwards'});
+      f.onfinish=()=>{ try{cup.animate([{transform:'translate(-30%,6%) rotate(108deg)',opacity:1},{transform:'translate(-30%,-120%) rotate(120deg)',opacity:0}],{duration:260,easing:'ease-in',fill:'forwards'});}catch(e){cup.style.opacity=0;} }; }catch(e){ cup.style.opacity=0; } }
+  let start=null;
+  function frame(ts){ if(finished)return; if(!start)start=ts; const gt=ts-start; const allDone=gt>=emitAt+D;
     list.forEach((d,i)=>{ const lt=gt-emitAt-i*20;
       if(lt<=0){ place(d,d._o.x,d._o.y,withCup?120:30,withCup?.7:.92,0); return; }
       const t=Math.min(1,lt/D), e=easeOut(t);
       const x=d._o.x+(d._t.x-d._o.x)*e, y=d._o.y+(d._t.y-d._o.y)*e;
       const z=Math.max(0,(1-t)*(withCup?150:90)*Math.abs(Math.sin(Math.PI*t*2.4)));
       if(t<0.82){ if((performance.now()|0)%3===0) d.img.src=ASSETS.dado[rollDie()-1]; }
-      else if(!d._fixed){ d._fixed=true; setFace(d,d.value); d.el.animate([{},{transform:d.el.style.transform+' scaleY(.84)'},{}],{duration:130,easing:'ease-out'}); sfx('tap'); }
+      else if(!d._fixed){ d._fixed=true; setFace(d,d.value); if(hasWAAPI){try{d.el.animate([{},{transform:d.el.style.transform+' scaleY(.84)'},{}],{duration:130,easing:'ease-out'});}catch(e){}} sfx('tap'); }
       place(d,x,y,z,1+z/300, t<0.82?(1-t)*430+d._endRot:d._endRot); });
-    if(!allDone&&!skip) requestAnimationFrame(frame);
-    else { list.forEach(d=>{ d._fixed=true; setFace(d,d.value); place(d,d._t.x,d._t.y,0,1,d._endRot); }); animating=false; done&&done(); } }
+    if(!allDone&&!skip) requestAnimationFrame(frame); else finalize(); }
   requestAnimationFrame(frame);
 }
 stage.addEventListener('pointerdown',()=>{ if(animating) skip=true; }, true);
@@ -426,6 +434,16 @@ function sfx(k){ ensureAudio(); if(!actx||muted)return;
   else if(k==='win'){[523,659,784,1047].forEach((f,i)=>tone(f,.22,'triangle',.3,i*.1));} }
 (function(){const b=$('sound-toggle'); if(muted)b.classList.add('muted');
   b.onclick=()=>{ensureAudio();const nm=!b.classList.contains('muted');b.classList.toggle('muted',nm);muted=nm;try{localStorage.setItem('bohemy_muted',nm?'1':'0');}catch(e){}if(mGain&&actx)mGain.gain.setTargetAtTime(nm?0:.5,actx.currentTime,.05);};})();
+
+/* instalar PWA: el botón aparece solo si el navegador la considera instalable y no lo está */
+(function(){
+  const btn=$('btn-install'); let deferred=null;
+  const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
+  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferred=e; if(!standalone) btn.style.display=''; });
+  btn.onclick=async()=>{ if(!deferred) return; btn.style.display='none'; deferred.prompt();
+    try{ await deferred.userChoice; }catch(e){} deferred=null; };
+  window.addEventListener('appinstalled', ()=>{ btn.style.display='none'; deferred=null; });
+})();
 
 window.addEventListener('load',()=>{ setTimeout(()=>{const s=$('app-splash');s.classList.add('hiding');setTimeout(()=>s.style.display='none',600);},1900); });
 window.addEventListener('resize',()=>{ if(G&&!animating) G.dice.forEach(d=>{ if(d.zone==='tray')return; place(d,Math.min(d.x,stage.clientWidth-HALF),Math.min(d.y,trayTop()-HALF-4),0,1,d.rot); }); });
