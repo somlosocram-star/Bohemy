@@ -1,6 +1,6 @@
 /* Bohemy — service worker */
-const CACHE = 'bohemy-v10';
-const ASSETS = [
+const CACHE = 'bohemy-v14';
+const CORE = [
   './',
   './index.html',
   './manifest.webmanifest',
@@ -9,9 +9,17 @@ const ASSETS = [
   './icon-512.png',
   './apple-touch-icon.png'
 ];
+const MEDIA = [
+  './hilo.mp3','./arco.mp3','./agua.mp3','./dragon.mp3','./hielo.mp3',
+  './cubilete.mp3','./caidas.mp3','./dos.mp3','./varios.mp3'
+];
 
 self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.addAll(ASSETS)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(CACHE).then(c =>
+      c.addAll(CORE).then(() => { Promise.allSettled(MEDIA.map(u => c.add(u))); })
+    ).then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener('activate', e => {
@@ -28,7 +36,6 @@ self.addEventListener('fetch', e => {
     (req.headers.get('accept') || '').includes('text/html');
 
   if (isHTML) {
-    // network-first: el HTML siempre intenta la red para no quedar atrapado en builds viejas
     e.respondWith(
       fetch(req).then(res => {
         const copy = res.clone();
@@ -37,7 +44,6 @@ self.addEventListener('fetch', e => {
       }).catch(() => caches.match('./index.html').then(r => r || caches.match('./')))
     );
   } else {
-    // cache-first para estáticos
     e.respondWith(
       caches.match(req).then(hit => hit || fetch(req).then(res => {
         const copy = res.clone();
