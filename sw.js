@@ -1,5 +1,5 @@
 /* Bohemy — service worker */
-const CACHE = 'bohemy-v32';
+const CACHE = 'bohemy-v33';
 const CORE = [
   './',
   './index.html',
@@ -11,7 +11,8 @@ const CORE = [
 ];
 const MEDIA = [
   './hilo.mp3','./arco.mp3','./agua.mp3','./dragon.mp3','./hielo.mp3',
-  './cubilete.mp3','./caidas.mp3','./dos.mp3','./varios.mp3'
+  './cubilete.mp3','./caidas.mp3','./dos.mp3','./varios.mp3',
+  './posada_cutre.jpg','./posada_media.jpg','./posada_luz.jpg','./sala_rey.jpg'
 ];
 
 self.addEventListener('install', e => {
