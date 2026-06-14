@@ -1,5 +1,5 @@
 /* Bohemy — service worker */
-const CACHE = 'bohemy-v33c';
+const CACHE = 'bohemy-v33d';
 const CORE = [
   './',
   './index.html',
