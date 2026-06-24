@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0c0a0b">
-<meta name="version" content="bohemy-v45">
+<meta name="version" content="bohemy-v46">
 <!-- Bohemy v26 — multijugador online -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -248,7 +248,7 @@ body.story #theme-toggle, body.story #sound-toggle, body.story #help-btn{ displa
   <div class="home-version" id="version-tag"></div>
 </div>
 
-<div id="screen-quick"<div id="screen-quick" class="screen">
+<div id="screen-quick" class="screen">
   <div class="seal"><svg style="color:var(--accent)"><use href="#ico-die"/></svg></div>
   <div class="subtitle">partida rápida</div>
   <div class="section-label">rivales</div>
@@ -319,7 +319,7 @@ body.story #theme-toggle, body.story #sound-toggle, body.story #help-btn{ displa
 const $=id=>document.getElementById(id);
 const ASSETS={ dado:["assets/a002.png","assets/a003.png","assets/a004.png","assets/a005.png","assets/a006.png","assets/a007.png"] };
 const REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const VERSION='v45';
+const VERSION='v46';
 
 /* reglas */
 const RULES={ DICE:6, GOAL:7000, ENTRY:500, ENTRY_ON:false,
@@ -347,9 +347,6 @@ const DIE=56, HALF=DIE/2;
 const easeOut=t=>1-Math.pow(1-t,3);
 
 let gameMode='ai', aiLevel='normal';
-window.DCOLOR={astillado:'#b25b4a',marinero:'#3f7d77',bruma:'#7f93a8',carbon:'#4a4a4a',azabache:'#2e2a33',luto:'#6a3a4f',nacar:'#b9a7d8',marfil:'#cdbf9c',luna:'#9fb6d8'};
-window.DADO_FACES={"astillado":["assets/a008.webp","assets/a009.webp","assets/a010.webp","assets/a011.webp","assets/a012.webp","assets/a013.webp"],"marinero":["assets/a014.webp","assets/a015.webp","assets/a016.webp","assets/a017.webp","assets/a018.webp","assets/a019.webp"],"bruma":["assets/a020.webp","assets/a021.webp","assets/a022.webp","assets/a023.webp","assets/a024.webp","assets/a025.webp"]};
-function faceSrc(dado,v){ var m=window.DADO_FACES&&window.DADO_FACES[dado]; return (m&&m[v-1])?m[v-1]:('story/'+dado+'-'+v+'.png'); }
 function rollSlot(dado){ return (dado&&window.DadosHistoria)?window.DadosHistoria.rollDado(dado):rollDie(); }
 function curLoadout(){ return null; }
 function freshGame(n){ let aiK=0;
@@ -392,12 +389,12 @@ function place(d,x,y,z,scale,rot){ d.x=x; d.y=y; d.rot=rot;
   d.el.style.transform=`translate(${x-HALF}px,${y-HALF}px) rotate(${rot}deg) scale(${scale})`;
   const ss=1+z/120, op=Math.max(.08,.42-z/360);
   d.sh.style.transform=`translate(${x-HALF}px,${y-HALF+HALF+5}px) scale(${ss},${ss*0.7})`; d.sh.style.opacity=op; }
-function setFace(d,v){ d.value=v; d.img.src=(d.dado&&d.dado!=='hueso')?faceSrc(d.dado,v):ASSETS.dado[v-1]; }
-function faceImg(d,v){ d.img.src=(d.dado&&d.dado!=='hueso')?faceSrc(d.dado,v):ASSETS.dado[v-1]; }
+function setFace(d,v){ d.value=v; d.img.src=ASSETS.dado[v-1]; }
+function faceImg(d,v){ d.img.src=ASSETS.dado[v-1]; }
 function makeDie(value,dado){ const el=document.createElement('div'); el.className='pd';
   const img=document.createElement('img'); img.src=ASSETS.dado[value-1]; el.appendChild(img);
   const sh=document.createElement('div'); sh.className='sh'; stage.appendChild(sh); stage.appendChild(el);
-  const d={el,sh,img,value,dado:dado||null,zone:'mesa',x:0,y:0,rot:0}; img.onerror=function(){ img.src=ASSETS.dado[(d.value||1)-1]; }; if(dado&&dado!=='hueso'){ img.src=faceSrc(dado,value); el.classList.add('dx'); el.dataset.dado=dado; } else { el.dataset.dado='hueso'; } attachDrag(d); return d; }
+  const d={el,sh,img,value,dado:dado||null,zone:'mesa',x:0,y:0,rot:0}; img.onerror=function(){ img.src=ASSETS.dado[(d.value||1)-1]; }; el.dataset.dado='hueso'; attachDrag(d); return d; }
 function clearDice(){ G.dice.forEach(d=>{d.el.remove();d.sh.remove();}); G.dice=[]; }
 function scatterTargets(n){ const w=stage.clientWidth, top=46, bottom=trayTop()-18, left=38, right=w-38, pts=[]; let g=0;
   while(pts.length<n&&g++<400){ const x=left+Math.random()*(right-left), y=top+Math.random()*(bottom-top);
@@ -660,7 +657,7 @@ $('btn-join').onclick=()=>{ const c=($('join-code').value||'').trim().toUpperCas
   if(c.length!==4){ $('online-msg').textContent='el código tiene 4 letras'; return; }
   $('online-msg').textContent='conectando…'; Net.join(c, m=>{ $('online-msg').textContent=m; }); };
 $('btn-ai').onclick=()=>{ kickAudio(); gameMode='ai'; show('screen-quick'); };
-$('btn-quick-back').onclick=()=>show('screen-aimenu');
+$('btn-quick-back').onclick=()=>show('screen-home');
 let nIA=1;
 $('ia-switch').addEventListener('click',e=>{ const o=e.target.closest('.sw-opt'); if(!o)return; const opts=[...$('ia-switch').querySelectorAll('.sw-opt')]; opts.forEach(x=>x.classList.remove('selected')); o.classList.add('selected'); nIA=+o.dataset.ia; $('ia-switch').querySelector('.sw-knob').style.left=`calc(4px + ${opts.indexOf(o)} * (100% - 8px) / 3)`; });
 $('level-cards').addEventListener('click',e=>{ const c=e.target.closest('.card'); if(!c)return; $('level-cards').querySelectorAll('.card').forEach(x=>x.classList.remove('selected')); c.classList.add('selected'); aiLevel=c.dataset.lvl; });
@@ -724,9 +721,13 @@ document.addEventListener('pointerdown', kickAudio);
 (function(){
   const btn=$('btn-install'); let deferred=null;
   const standalone = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone===true;
-  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferred=e; if(!standalone) btn.style.display=''; });
-  btn.onclick=async()=>{ if(!deferred) return; btn.style.display='none'; deferred.prompt();
-    try{ await deferred.userChoice; }catch(e){} deferred=null; };
+  if(standalone){ btn.style.display='none'; return; }
+  window.addEventListener('beforeinstallprompt', e=>{ e.preventDefault(); deferred=e; btn.style.display=''; });
+  setTimeout(()=>{ if(!deferred && !standalone) btn.style.display=''; }, 2500);
+  btn.onclick=async()=>{
+    if(deferred){ btn.style.display='none'; deferred.prompt(); try{ await deferred.userChoice; }catch(e){} deferred=null; return; }
+    alert('Para instalar Bohemy:\n\nAndroid (Chrome): menú \u22ee \u2192 "Instalar aplicación".\niPhone (Safari): Compartir \u2192 "Añadir a pantalla de inicio".');
+  };
   window.addEventListener('appinstalled', ()=>{ btn.style.display='none'; deferred=null; });
 })();
 
@@ -743,7 +744,7 @@ if('serviceWorker' in navigator){
 }
 </script>
 
-<div id="combos-help"<div id="combos-help" style="display:none">
+<div id="combos-help" style="display:none">
   <div class="ch-card">
     <h3>Combinaciones</h3>
     <ul>
