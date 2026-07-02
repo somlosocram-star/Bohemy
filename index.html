@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#0c0a0b">
-<meta name="version" content="bohemy-v47">
+<meta name="version" content="bohemy-v48">
 <!-- Bohemy v26 — multijugador online -->
 <link rel="manifest" href="manifest.webmanifest">
 <link rel="icon" type="image/png" sizes="32x32" href="favicon-32.png">
@@ -142,7 +142,7 @@ body.light .card{ background:linear-gradient(180deg,var(--panel-2),var(--panel))
 .turn-line{ margin:.5rem auto .1rem; font-family:'IBM Plex Mono',monospace; font-size:.62rem; letter-spacing:.2em; text-transform:uppercase; color:var(--muted); min-height:1.1em; }
 .turn-line b{ color:var(--text); }
 .stage{ flex:1 1 auto; position:relative; margin:.35rem .6rem 0; border-radius:12px; overflow:hidden;
-  background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(38,30,24,.35), rgba(15,12,11,.78) 82%), url("assets/a000.jpg") center/200px repeat, #15110f;
+  background:radial-gradient(ellipse 80% 60% at 50% 38%, rgba(38,30,24,.35), rgba(15,12,11,.78) 82%), url("a000.jpg") center/200px repeat, #15110f;
   border:1px solid var(--line); touch-action:none; }
 .stage::after{ content:''; position:absolute; inset:0; pointer-events:none; border-radius:12px; box-shadow:inset 0 0 60px rgba(0,0,0,.6); }
 .locked-strip{ position:absolute; top:6px; left:8px; right:8px; display:flex; gap:4px; flex-wrap:wrap; align-items:center; z-index:2; min-height:30px; }
@@ -299,7 +299,7 @@ body.story #theme-toggle, body.story #sound-toggle, body.story #help-btn{ displa
     <div class="goal-line" id="goal-line"></div>
   </div>
   <div class="stage" id="stage">
-    <img class="cup" id="cup" src="assets/a001.png" alt="">
+    <img class="cup" id="cup" src="a001.png" alt="">
     <button class="roll-medal" id="roll-medal"><svg viewBox="0 0 64 64" style="color:#efe7d6"><use href="#ico-die"/></svg><span>tirar</span></button>
     <div class="tray" id="tray"><span class="lbl">apartados — arrastra aquí</span><span class="tscore" id="tray-score"></span></div>
   </div>
@@ -317,9 +317,9 @@ body.story #theme-toggle, body.story #sound-toggle, body.story #help-btn{ displa
 
 <script>
 const $=id=>document.getElementById(id);
-const ASSETS={ dado:["assets/a002.png","assets/a003.png","assets/a004.png","assets/a005.png","assets/a006.png","assets/a007.png"] };
+const ASSETS={ dado:["a002.png","a003.png","a004.png","a005.png","a006.png","a007.png"] };
 const REDUCED=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-const VERSION='v47';
+const VERSION='v48';
 
 /* reglas */
 const RULES={ DICE:6, GOAL:7000, ENTRY:500, ENTRY_ON:false,
